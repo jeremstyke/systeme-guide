@@ -9,7 +9,9 @@ from long_i18n import LONG
 from long_es import LONG_ES
 from long_br import LONG_BR
 from long_de import LONG_DE
-for _x in (LONG_ES, LONG_BR, LONG_DE): LONG.update(_x)
+from long_it import LONG_IT
+from long_pl import LONG_PL
+for _x in (LONG_ES, LONG_BR, LONG_DE, LONG_IT, LONG_PL): LONG.update(_x)
 
 OUT = sys.argv[1]
 BASE = "https://jeremstyke.github.io/systeme-guide/"
