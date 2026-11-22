@@ -4,6 +4,7 @@ import os, sys, json, html
 sys.path.insert(0, os.path.dirname(__file__))
 from i18n import LANGS
 from articles import ARTICLES, BLOGTXT
+from pages_i18n import P
 
 OUT = sys.argv[1]
 BASE = "https://jeremstyke.github.io/systeme-guide/"
@@ -114,6 +115,11 @@ footer{border-top:1px solid var(--line);padding:34px 0;font-size:14px;color:var(
 @media(max-width:900px){.posts{grid-template-columns:1fr 1fr}}@media(max-width:600px){.posts{grid-template-columns:1fr}.nav-g{display:none}}
 @media(max-width:900px){.hero .wrap{grid-template-columns:1fr}.mock{transform:none;max-width:460px}.grid,.plans{grid-template-columns:1fr 1fr}ol.steps{grid-template-columns:1fr}}
 @media(max-width:600px){.grid,.plans{grid-template-columns:1fr}.hero{padding:40px 0 24px}section{padding:52px 0}.logo em,.btn.hdr{display:none}.hero p.sub{font-size:17px}}
+.pc{list-style:none;padding:0!important;margin:0}.pc li{padding:9px 0 9px 32px!important;position:relative;border-bottom:1px solid var(--line);margin:0!important}
+.pc.good li::before{content:"✓";position:absolute;left:6px;color:#16a34a;font-weight:800}.pc.bad li::before{content:"✕";position:absolute;left:6px;color:#dc2626;font-weight:800}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:26px}@media(max-width:700px){.two{grid-template-columns:1fr}}
+.art td.win{background:#ecfdf3;font-weight:600}.glinks{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:14px}.glinks a{color:var(--ink);font-weight:600;text-decoration:none}.glinks a:hover{color:var(--blue2)}
+.cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}@media(max-width:800px){.cmp{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 """
 
@@ -151,6 +157,96 @@ def posts_section(code, base):
     if not A:
         return ""
     return f'<section class="alt"><div class="wrap"><h2>{E(bt(code, "guides_h"))}</h2><div class="posts">{cards(code, base, A[:3])}</div><p class="center" style="margin-top:22px"><a href="{base}blog/">{E(bt(code, "all"))} →</a></p></div></section>'
+
+
+SLUGS = ["review", "vs-clickfunnels", "vs-kajabi"]
+
+def guide_links(code, base):
+    T = P[code]
+    return f'<a class="nav-g" href="{base}review/">{E(T["nav_review"])}</a><a class="nav-g" href="{base}vs-clickfunnels/">{E(T["nav_vs"])}</a>'
+
+def pt(code, s):
+    return s.replace("{P0}", money(0, code)).replace("{P17}", money(17, code)).replace("{P97}", money(97, code))
+
+def compare_section(code, base):
+    T = P[code]
+    items = [("review/", T["read_review"], T["rev_desc"]),
+             ("vs-clickfunnels/", "Systeme.io vs ClickFunnels", T["vs_desc"].format(x="ClickFunnels")),
+             ("vs-kajabi/", "Systeme.io vs Kajabi", T["vs_desc"].format(x="Kajabi"))]
+    cards_ = "".join(f'<a class="post" href="{base}{h}"><h3>{E(t)}</h3><p>{E(d)}</p><span>{E(T["nav_review"] if h == "review/" else T["nav_vs"])} →</span></a>' for h, t, d in items)
+    return f'<section><div class="wrap"><h2>{E(T["compare_h"])}</h2><div class="cmp">{cards_}</div></div></section>'
+
+def alt_links(slug):
+    s = "\n".join(f'<link rel="alternate" hreflang="{M["hl"]}" href="{url(M)}{slug}/">' for M in LANGS.values())
+    return s + f'\n<link rel="alternate" hreflang="x-default" href="{BASE}{slug}/">'
+
+def review_main(code, L):
+    T = P[code]
+    li = lambda xs: "".join(f"<li>{E(pt(code, x))}</li>" for x in xs)
+    n = lambda v: num(v, code)
+    cta = f'<div class="cta-box"><p>{E(L["nocard"])}</p><a class="btn" {{AFF}}>{E(T["try_free"])}</a></div>'
+    rows = [(L["free"], 0, n(2000), "3", "1"), ("Startup", 17, n(5000), "10", "5"), ("Webinar", 47, n(10000), "50", "20"), ("Unlimited", 97, L["unl"], L["unl"], L["unl"])]
+    tbl = "".join(f"<tr><td><b>{E(a)}</b></td><td>{money(p, code)}{E(L['month'])}</td><td>{E(c)}</td><td>{E(f)}</td><td>{E(k)}</td></tr>" for a, p, c, f, k in rows)
+    return f"""<article class="art"><div class="crumbs"><a href="../">Systeme.io Guide</a> › {E(T['nav_review'])}</div>
+<h1>{E(T['rev_h1'])}</h1><p>{E(T['rev_intro'])}</p>{cta}
+<div class="two"><div><h2>{E(T['pros_h'])}</h2><ul class="pc good">{li(T['pros'])}</ul></div><div><h2>{E(T['cons_h'])}</h2><ul class="pc bad">{li(T['cons'])}</ul></div></div>
+<h2>{E(L['price_h'])}</h2><div class="tbl"><table><thead><tr><th></th><th>{E(L['price_h'])}</th><th>{E(L['contacts'])}</th><th>{E(L['funnels'])}</th><th>{E(L['courses'])}</th></tr></thead><tbody>{tbl}</tbody></table></div>
+<p style="font-size:15px;color:var(--mute)">{E(L['price_note'])} {E(L['all_inc'])}</p>
+<h2>{E(T['who_h'])}</h2><ul class="pc good">{li(T['who'])}</ul>
+<h2>{E(T['verdict_h'])}</h2><div class="tip">{E(pt(code, T['rev_verdict']))}</div>
+{cta}
+<h2>{E(T['compare_h'])}</h2><div class="posts" style="grid-template-columns:1fr 1fr"><a class="post" href="../vs-clickfunnels/"><h3>Systeme.io vs ClickFunnels</h3><span>{E(T['nav_vs'])} →</span></a><a class="post" href="../vs-kajabi/"><h3>Systeme.io vs Kajabi</h3><span>{E(T['nav_vs'])} →</span></a></div>
+<p style="font-size:14px;color:var(--mute)">{E(T['checked'])}</p></article>"""
+
+COMP = {
+ "vs-clickfunnels": dict(x="ClickFunnels", price=97, yearly=81, trial="q", contacts=10000, emails=50000, courses="3", fees="fees_cf", verdict="cf_verdict"),
+ "vs-kajabi": dict(x="Kajabi", price=179, yearly=143, trial=14, contacts=2500, emails=None, courses="5", fees="fees_kj", verdict="kj_verdict"),
+}
+
+def vs_main(code, L, slug):
+    T = P[code]; C = COMP[slug]; x = C["x"]
+    n = lambda v: num(v, code)
+    trial = T["trial_q"] if C["trial"] == "q" else T["trial_n"].format(n=C["trial"])
+    emails = f"{n(C['emails'])} {T['per_month']}" if C["emails"] else "-"
+    courses = C["courses"] if slug == "vs-clickfunnels" else f"{C['courses']} {T['products']}"
+    rows = [
+        (T["r_price"], f"{money(0, code)} / {money(17, code)}{T['mo']}", f"${C['price']}{T['mo']} ({T['yearly'].format(p='$' + str(C['yearly']))})", 1),
+        (T["r_free"], T["yes"], T["no"], 1),
+        (T["r_trial"], T["trial_none"], trial, 0),
+        (T["r_contacts"], pt(code, T["sio_contacts"]), n(C["contacts"]), 0),
+        (T["r_emails"], T["unl"], emails, 1),
+        (T["r_courses"], pt(code, T["sio_courses"]), courses, 0),
+        (T["r_fees"], T["fees_sio"], T[C["fees"]], 0),
+    ]
+    body = "".join(f'<tr><th>{E(a)}</th><td class="{"win" if w else ""}">{E(b)}</td><td>{E(c)}</td></tr>' for a, b, c, w in rows)
+    other = "vs-kajabi" if slug == "vs-clickfunnels" else "vs-clickfunnels"
+    cta = f'<div class="cta-box"><p>{E(L["nocard"])}</p><a class="btn" {{AFF}}>{E(T["try_free"])}</a></div>'
+    return f"""<article class="art"><div class="crumbs"><a href="../">Systeme.io Guide</a> › {E(T['nav_vs'])}</div>
+<h1>{E(T['vs_h1'].format(x=x))}</h1><p>{E(T['vs_intro'].format(x=x))}</p>
+<div class="tbl"><table><thead><tr><th>{E(T['c_feat'])}</th><th>Systeme.io</th><th>{E(x)}</th></tr></thead><tbody>{body}</tbody></table></div>
+<p style="font-size:14px;color:var(--mute)">{E(T['checked'])}</p>
+<h2>{E(T['verdict_vs'])}</h2><div class="tip">{E(pt(code, T[C['verdict']]))}</div>
+{cta}
+<h2>{E(T['compare_h'])}</h2><div class="posts" style="grid-template-columns:1fr 1fr"><a class="post" href="../review/"><h3>{E(T['read_review'])}</h3><span>{E(T['nav_review'])} →</span></a><a class="post" href="../{other}/"><h3>Systeme.io vs {COMP[other]['x']}</h3><span>{E(T['nav_vs'])} →</span></a></div></article>"""
+
+def write_guides():
+    urls = []
+    for code, L in LANGS.items():
+        T = P[code]
+        base = os.path.join(OUT, L["path"]) if L["path"] else OUT
+        depth = "../../" if L["path"] else "../"
+        pages = {"review": (T["rev_title"], T["rev_desc"], review_main(code, L)),
+                 "vs-clickfunnels": (T["vs_title"].format(x="ClickFunnels"), T["vs_desc"].format(x="ClickFunnels"), vs_main(code, L, "vs-clickfunnels")),
+                 "vs-kajabi": (T["vs_title"].format(x="Kajabi"), T["vs_desc"].format(x="Kajabi"), vs_main(code, L, "vs-kajabi"))}
+        for slug, (title, desc, main) in pages.items():
+            d = os.path.join(base, slug)
+            os.makedirs(d, exist_ok=True)
+            open(os.path.join(d, "index.html"), "w", encoding="utf-8").write(shell(code, L, title, desc, url(L) + slug + "/", main, None, depth, alt_links(slug)))
+    for slug in SLUGS:
+        for L in LANGS.values():
+            alt = "".join(f'<xhtml:link rel="alternate" hreflang="{M["hl"]}" href="{url(M)}{slug}/"/>' for M in LANGS.values())
+            urls.append(f"<url><loc>{url(L)}{slug}/</loc>{alt}</url>")
+    return urls
 
 
 def page(code, L):
@@ -207,7 +303,7 @@ def page(code, L):
 <div class="suggest" id="sg"></div>
 <header><div class="wrap">
 <a class="logo" href="{rel(L)}"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M4 16l5-5 4 4 7-8"/></svg></i><strong>Systeme<span>.io</span> Guide</strong></a>
-<div class="hdr-r">{blog_link(code, rel(L))}<details class="lang"><summary>🌐 {E(L['name'])}</summary><div>{menu}</div></details><a class="btn hdr" {link}>{E(L['cta'])}</a></div>
+<div class="hdr-r">{guide_links(code, rel(L))}{blog_link(code, rel(L))}<details class="lang"><summary>🌐 {E(L['name'])}</summary><div>{menu}</div></details><a class="btn hdr" {link}>{E(L['cta'])}</a></div>
 </div></header>
 <main>
 <div class="hero"><div class="wrap">
@@ -231,6 +327,7 @@ def page(code, L):
 <p class="small-note">{E(L['price_note'])} {E(L['all_inc'])}</p></div></section>
 <section class="alt"><div class="wrap"><h2>{E(L['steps_h'])}</h2><ol class="steps">{steps}</ol>
 <p class="center" style="margin-top:20px"><a class="btn" {link}>{E(L['cta'])}</a></p></div></section>
+{compare_section(code, rel(L))}
 {posts_section(code, rel(L))}
 <section><div class="wrap"><h2>{E(L['faq_h'])}</h2><div class="faq">{faq}</div></div></section>
 <section><div class="wrap"><div class="final"><h2>{E(L['final_h'])}</h2><p>{E(L['final_p'])}</p><a class="btn" {link}>{E(L['cta'])}</a></div></div></section>
@@ -249,7 +346,7 @@ def page(code, L):
 
 FAV = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2300A0FF'/%3E%3Cpath d='M18 40l10-10 8 8 12-14' stroke='white' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"
 
-def shell(code, L, title, desc, canon, main, ld=None, depth=""):
+def shell(code, L, title, desc, canon, main, ld=None, depth="", alts=""):
     a = aff(L)
     link = f'href="{E(a)}" rel="sponsored nofollow noopener" target="_blank"'
     home = depth + (L["path"] + "/" if L["path"] else "")
@@ -263,6 +360,7 @@ def shell(code, L, title, desc, canon, main, ld=None, depth=""):
 <title>{E(title)}</title>
 <meta name="description" content="{E(desc)}">
 <link rel="canonical" href="{canon}">
+{alts}
 <meta property="og:title" content="{E(title)}">
 <meta property="og:description" content="{E(desc)}">
 <meta property="og:type" content="article">
@@ -276,10 +374,10 @@ def shell(code, L, title, desc, canon, main, ld=None, depth=""):
 <body>
 <header><div class="wrap">
 <a class="logo" href="{home}"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M4 16l5-5 4 4 7-8"/></svg></i><strong>Systeme<span>.io</span> Guide</strong></a>
-<div class="hdr-r">{blog_link(code, home)}<details class="lang"><summary>🌐 {E(L['name'])}</summary><div>{menu}</div></details><a class="btn hdr" {link}>{E(L['cta'])}</a></div>
+<div class="hdr-r">{guide_links(code, home)}{blog_link(code, home)}<details class="lang"><summary>🌐 {E(L['name'])}</summary><div>{menu}</div></details><a class="btn hdr" {link}>{E(L['cta'])}</a></div>
 </div></header>
 <main>{main.replace("{AFF}", link).replace("{CTA}", E(L['cta']))}</main>
-<footer><div class="wrap"><p>{E(L['disc'])}</p><p>© <span id="y"></span> Systeme.io Guide</p></div></footer>
+<footer><div class="wrap"><div class="glinks"><a href="{home}">Systeme.io Guide</a><a href="{home}review/">{E(P[code]["nav_review"])}</a><a href="{home}vs-clickfunnels/">Systeme.io vs ClickFunnels</a><a href="{home}vs-kajabi/">Systeme.io vs Kajabi</a></div><p>{E(L['disc'])}</p><p>© <span id="y"></span> Systeme.io Guide</p></div></footer>
 <script>document.getElementById('y').textContent=new Date().getFullYear();</script>
 </body>
 </html>
@@ -332,6 +430,7 @@ for L in LANGS.values():
     alt = "".join(f'<xhtml:link rel="alternate" hreflang="{M["hl"]}" href="{url(M)}"/>' for M in LANGS.values())
     items.append(f"<url><loc>{url(L)}</loc>{alt}</url>")
 items += [f"<url><loc>{u}</loc></url>" for u in write_articles()]
+items += write_guides()
 with open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8") as f:
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
             + "".join(items) + "</urlset>\n")
