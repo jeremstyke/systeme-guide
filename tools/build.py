@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from i18n import LANGS
 from articles import ARTICLES, BLOGTXT
 from pages_i18n import P
+from long_i18n import LONG
 
 OUT = sys.argv[1]
 BASE = "https://jeremstyke.github.io/systeme-guide/"
@@ -229,6 +230,21 @@ def vs_main(code, L, slug):
 {cta}
 <h2>{E(T['compare_h'])}</h2><div class="posts" style="grid-template-columns:1fr 1fr"><a class="post" href="../review/"><h3>{E(T['read_review'])}</h3><span>{E(T['nav_review'])} →</span></a><a class="post" href="../{other}/"><h3>Systeme.io vs {COMP[other]['x']}</h3><span>{E(T['nav_vs'])} →</span></a></div></article>"""
 
+def long_main(code, L, slug):
+    T = P[code]; X = LONG[(code, slug)]
+    h1 = T["rev_h1"] if slug == "review" else T["vs_h1"].format(x=COMP[slug]["x"])
+    crumb = T["nav_review"] if slug == "review" else T["nav_vs"]
+    faq = "".join(f"<details><summary>{E(q)}</summary><p>{E(r)}</p></details>" for q, r in X["faq"])
+    rel = [("review/", T["read_review"]), ("vs-clickfunnels/", "Systeme.io vs ClickFunnels"), ("vs-kajabi/", "Systeme.io vs Kajabi")]
+    rel_html = "".join(f'<a class="post" href="../{h}"><h3>{E(t)}</h3><span>{E(T["nav_review"] if h == "review/" else T["nav_vs"])} →</span></a>' for h, t in rel if h != slug + "/")
+    main = (f'<article class="art"><div class="crumbs"><a href="../">Systeme.io Guide</a> › {E(crumb)}</div><h1>{E(h1)}</h1>'
+            f'<div class="meta">{E(T["checked"])}</div>{X["body"]}'
+            f'<h2>{E(L["faq_h"])}</h2><div class="faq" style="margin-top:12px">{faq}</div>'
+            f'<h2>{E(T["compare_h"])}</h2><div class="posts" style="grid-template-columns:1fr 1fr">{rel_html}</div></article>')
+    ld = {"@context": "https://schema.org", "@type": "FAQPage", "inLanguage": L["hl"],
+          "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in X["faq"]]}
+    return main, ld
+
 def write_guides():
     urls = []
     for code, L in LANGS.items():
@@ -239,9 +255,12 @@ def write_guides():
                  "vs-clickfunnels": (T["vs_title"].format(x="ClickFunnels"), T["vs_desc"].format(x="ClickFunnels"), vs_main(code, L, "vs-clickfunnels")),
                  "vs-kajabi": (T["vs_title"].format(x="Kajabi"), T["vs_desc"].format(x="Kajabi"), vs_main(code, L, "vs-kajabi"))}
         for slug, (title, desc, main) in pages.items():
+            ld = None
+            if (code, slug) in LONG:
+                main, ld = long_main(code, L, slug)
             d = os.path.join(base, slug)
             os.makedirs(d, exist_ok=True)
-            open(os.path.join(d, "index.html"), "w", encoding="utf-8").write(shell(code, L, title, desc, url(L) + slug + "/", main, None, depth, alt_links(slug)))
+            open(os.path.join(d, "index.html"), "w", encoding="utf-8").write(shell(code, L, title, desc, url(L) + slug + "/", main, ld, depth, alt_links(slug)))
     for slug in SLUGS:
         for L in LANGS.values():
             alt = "".join(f'<xhtml:link rel="alternate" hreflang="{M["hl"]}" href="{url(M)}{slug}/"/>' for M in LANGS.values())
