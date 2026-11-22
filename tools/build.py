@@ -3,6 +3,7 @@
 import os, sys, json, html
 sys.path.insert(0, os.path.dirname(__file__))
 from i18n import LANGS
+from articles import ARTICLES, BLOGTXT
 
 OUT = sys.argv[1]
 BASE = "https://jeremstyke.github.io/systeme-guide/"
@@ -96,6 +97,21 @@ ol.steps li::before{content:counter(s);display:flex;width:38px;height:38px;borde
 footer{border-top:1px solid var(--line);padding:34px 0;font-size:14px;color:var(--mute)}
 .langs{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 16px}.langs a{color:var(--mute);text-decoration:none}.langs a:hover{color:var(--blue2)}
 .suggest{display:none;background:var(--sky);border-bottom:1px solid #cfeaff;text-align:center;padding:9px;font-size:14px;font-weight:600}
+.nav-g{font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;padding:7px 4px}.nav-g:hover{color:var(--blue2)}
+.posts{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px}
+.post{display:block;border:1px solid var(--line);border-radius:18px;padding:24px;background:#fff;text-decoration:none;color:var(--ink);transition:box-shadow .2s,border-color .2s}
+.post:hover{border-color:#bfe5ff;box-shadow:0 14px 34px rgba(11,59,102,.08)}.post h3{margin:0 0 8px;font-size:18px;line-height:1.3}.post p{margin:0;color:#55585f;font-size:15px}
+.post span{display:inline-block;margin-top:12px;color:var(--blue2);font-weight:700;font-size:14px}
+.art{max-width:760px;margin:0 auto;padding:48px 20px 20px}.crumbs{font-size:14px;color:var(--mute);margin-bottom:14px}.crumbs a{color:var(--mute)}
+.art h1{font-size:clamp(30px,4.6vw,44px);line-height:1.12;letter-spacing:-1px;margin:0 0 14px}.meta{color:var(--mute);font-size:14px;margin-bottom:28px}
+.art h2{font-size:clamp(22px,3vw,28px);margin:40px 0 12px;letter-spacing:-.4px;line-height:1.2}.art h3{font-size:19px;margin:26px 0 8px}
+.art p,.art li{font-size:17.5px;color:#2b2d31}.art ul,.art ol{padding-left:22px}.art li{margin:6px 0}
+.art table{width:100%;border-collapse:collapse;margin:20px 0;font-size:15.5px}.art th,.art td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}.art th{background:var(--sky)}
+.tbl{overflow-x:auto}
+.cta-box{background:linear-gradient(135deg,var(--sky),#fff);border:1px solid #cfeaff;border-radius:18px;padding:24px;margin:32px 0;text-align:center}
+.cta-box p{margin:0 0 16px;font-weight:600}
+.tip{border-left:4px solid var(--blue);background:var(--soft);border-radius:0 12px 12px 0;padding:14px 18px;margin:22px 0}
+@media(max-width:900px){.posts{grid-template-columns:1fr 1fr}}@media(max-width:600px){.posts{grid-template-columns:1fr}.nav-g{display:none}}
 @media(max-width:900px){.hero .wrap{grid-template-columns:1fr}.mock{transform:none;max-width:460px}.grid,.plans{grid-template-columns:1fr 1fr}ol.steps{grid-template-columns:1fr}}
 @media(max-width:600px){.grid,.plans{grid-template-columns:1fr}.hero{padding:40px 0 24px}section{padding:52px 0}.logo em,.btn.hdr{display:none}.hero p.sub{font-size:17px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
@@ -109,6 +125,33 @@ ICONS = [
  '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>',
  '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M14.5 20c.3-2.5 2-4 4-4s3 1 3.5 2.5"/></svg>',
 ]
+
+def bt(code, k):
+    return BLOGTXT.get(code, BLOGTXT["en"])[k]
+
+MOIS = {"fr": ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"],
+        "en": ["January","February","March","April","May","June","July","August","September","October","November","December"]}
+def fdate(d, code):
+    y, m, j = d.split("-")
+    if code == "fr": return f"{int(j)} {MOIS['fr'][int(m)-1]} {y}"
+    if code == "en": return f"{MOIS['en'][int(m)-1]} {int(j)}, {y}"
+    return d
+
+def arts(code):
+    return sorted([a for a in ARTICLES if a["lang"] == code], key=lambda a: a["date"], reverse=True)
+
+def blog_link(code, base):
+    return f'<a class="nav-g" href="{base}blog/">{E(bt(code, "blog"))}</a>' if arts(code) else ""
+
+def cards(code, base, items):
+    return "".join(f'<a class="post" href="{base}blog/{a["slug"]}/"><h3>{E(a["h1"])}</h3><p>{E(a["desc"])}</p><span>{E(bt(code, "read"))} →</span></a>' for a in items)
+
+def posts_section(code, base):
+    A = arts(code)
+    if not A:
+        return ""
+    return f'<section class="alt"><div class="wrap"><h2>{E(bt(code, "guides_h"))}</h2><div class="posts">{cards(code, base, A[:3])}</div><p class="center" style="margin-top:22px"><a href="{base}blog/">{E(bt(code, "all"))} →</a></p></div></section>'
+
 
 def page(code, L):
     a = aff(L)
@@ -164,7 +207,7 @@ def page(code, L):
 <div class="suggest" id="sg"></div>
 <header><div class="wrap">
 <a class="logo" href="{rel(L)}"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M4 16l5-5 4 4 7-8"/></svg></i><strong>Systeme<span>.io</span> Guide</strong></a>
-<div class="hdr-r"><details class="lang"><summary>🌐 {E(L['name'])}</summary><div>{menu}</div></details><a class="btn hdr" {link}>{E(L['cta'])}</a></div>
+<div class="hdr-r">{blog_link(code, rel(L))}<details class="lang"><summary>🌐 {E(L['name'])}</summary><div>{menu}</div></details><a class="btn hdr" {link}>{E(L['cta'])}</a></div>
 </div></header>
 <main>
 <div class="hero"><div class="wrap">
@@ -188,6 +231,7 @@ def page(code, L):
 <p class="small-note">{E(L['price_note'])} {E(L['all_inc'])}</p></div></section>
 <section class="alt"><div class="wrap"><h2>{E(L['steps_h'])}</h2><ol class="steps">{steps}</ol>
 <p class="center" style="margin-top:20px"><a class="btn" {link}>{E(L['cta'])}</a></p></div></section>
+{posts_section(code, rel(L))}
 <section><div class="wrap"><h2>{E(L['faq_h'])}</h2><div class="faq">{faq}</div></div></section>
 <section><div class="wrap"><div class="final"><h2>{E(L['final_h'])}</h2><p>{E(L['final_p'])}</p><a class="btn" {link}>{E(L['cta'])}</a></div></div></section>
 </main>
@@ -203,6 +247,78 @@ def page(code, L):
 </html>
 """
 
+FAV = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2300A0FF'/%3E%3Cpath d='M18 40l10-10 8 8 12-14' stroke='white' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"
+
+def shell(code, L, title, desc, canon, main, ld=None, depth=""):
+    a = aff(L)
+    link = f'href="{E(a)}" rel="sponsored nofollow noopener" target="_blank"'
+    home = depth + (L["path"] + "/" if L["path"] else "")
+    menu = "".join(f'<a href="{depth}{(M["path"] + "/") if M["path"] else ""}" hreflang="{M["hl"]}" lang="{M["hl"]}">{E(M["name"])}</a>' for M in LANGS.values())
+    ldj = f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>' if ld else ""
+    return f"""<!doctype html>
+<html lang="{L['hl']}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{E(title)}</title>
+<meta name="description" content="{E(desc)}">
+<link rel="canonical" href="{canon}">
+<meta property="og:title" content="{E(title)}">
+<meta property="og:description" content="{E(desc)}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="{canon}">
+<link rel="icon" href="{FAV}">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>{CSS}</style>
+{ldj}
+</head>
+<body>
+<header><div class="wrap">
+<a class="logo" href="{home}"><i><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M4 16l5-5 4 4 7-8"/></svg></i><strong>Systeme<span>.io</span> Guide</strong></a>
+<div class="hdr-r">{blog_link(code, home)}<details class="lang"><summary>🌐 {E(L['name'])}</summary><div>{menu}</div></details><a class="btn hdr" {link}>{E(L['cta'])}</a></div>
+</div></header>
+<main>{main.replace("{AFF}", link).replace("{CTA}", E(L['cta']))}</main>
+<footer><div class="wrap"><p>{E(L['disc'])}</p><p>© <span id="y"></span> Systeme.io Guide</p></div></footer>
+<script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+</body>
+</html>
+"""
+
+def article_url(L, a):
+    return url(L) + "blog/" + a["slug"] + "/"
+
+def write_articles():
+    out_urls = []
+    for code, L in LANGS.items():
+        A = arts(code)
+        if not A:
+            continue
+        base = os.path.join(OUT, L["path"]) if L["path"] else OUT
+        depth_art = "../../../" if L["path"] else "../../"
+        depth_blog = "../../" if L["path"] else "../"
+        for a in A:
+            ld = {"@context": "https://schema.org", "@type": "Article", "headline": a["h1"], "inLanguage": L["hl"],
+                  "datePublished": a["date"], "dateModified": a.get("updated", a["date"]),
+                  "author": {"@type": "Organization", "name": "Systeme.io Guide"}}
+            cta = f'<div class="cta-box"><p>{E(bt(code, "cta_p"))}</p><a class="btn" {{AFF}}>{{CTA}}</a></div>'
+            others = [x for x in A if x["slug"] != a["slug"]][:3]
+            more = f'<h2>{E(bt(code, "more"))}</h2><div class="posts" style="grid-template-columns:1fr">{cards(code, depth_art + (L["path"] + "/" if L["path"] else ""), others)}</div>' if others else ""
+            main = (f'<article class="art"><div class="crumbs"><a href="{depth_art}{(L["path"] + "/") if L["path"] else ""}">Systeme.io Guide</a> › <a href="../">{E(bt(code, "blog"))}</a></div>'
+                    f'<h1>{E(a["h1"])}</h1><div class="meta">{E(bt(code, "upd"))} {fdate(a.get("updated", a["date"]), code)}</div>'
+                    f'{a["body"].replace("[CTA]", cta)}{cta}{more}</article>')
+            d = os.path.join(base, "blog", a["slug"])
+            os.makedirs(d, exist_ok=True)
+            open(os.path.join(d, "index.html"), "w", encoding="utf-8").write(shell(code, L, a["title"], a["desc"], article_url(L, a), main, ld, depth_art))
+            out_urls.append(article_url(L, a))
+        main = (f'<section><div class="wrap"><h2>{E(bt(code, "guides_h"))}</h2><p class="lead">{E(bt(code, "blog_p"))}</p>'
+                f'<div class="posts">{cards(code, depth_blog + (L["path"] + "/" if L["path"] else ""), A)}</div></div></section>')
+        d = os.path.join(base, "blog")
+        open(os.path.join(d, "index.html"), "w", encoding="utf-8").write(shell(code, L, bt(code, "guides_h") + " | Systeme.io Guide", bt(code, "blog_p"), url(L) + "blog/", main, None, depth_blog))
+        out_urls.append(url(L) + "blog/")
+    return out_urls
+
+
 os.makedirs(OUT, exist_ok=True)
 for code, L in LANGS.items():
     d = os.path.join(OUT, L["path"]) if L["path"] else OUT
@@ -215,6 +331,7 @@ items = []
 for L in LANGS.values():
     alt = "".join(f'<xhtml:link rel="alternate" hreflang="{M["hl"]}" href="{url(M)}"/>' for M in LANGS.values())
     items.append(f"<url><loc>{url(L)}</loc>{alt}</url>")
+items += [f"<url><loc>{u}</loc></url>" for u in write_articles()]
 with open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8") as f:
     f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">'
             + "".join(items) + "</urlset>\n")
