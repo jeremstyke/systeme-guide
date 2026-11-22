@@ -6,6 +6,10 @@ from i18n import LANGS
 from articles import ARTICLES, BLOGTXT
 from pages_i18n import P
 from long_i18n import LONG
+from long_es import LONG_ES
+from long_br import LONG_BR
+from long_de import LONG_DE
+for _x in (LONG_ES, LONG_BR, LONG_DE): LONG.update(_x)
 
 OUT = sys.argv[1]
 BASE = "https://jeremstyke.github.io/systeme-guide/"
