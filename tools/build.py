@@ -15,6 +15,14 @@ def num(n, code):
     sep = SEP.get(code, " ")  # espace insecable par defaut (fr, pl, ru, sv, no, sk)
     return s.replace(",", sep)
 
+EURO = {"fr", "de", "es", "it", "pt", "pl", "ro", "sv", "no", "sk", "sq"}
+EURO_BEFORE = {"sq"}
+def money(p, code):
+    # Europe : euros, symbole apres le montant (usage local) ; ailleurs : dollars
+    if code in EURO:
+        return f"€{p}" if code in EURO_BEFORE else f"{p}\u00a0€"
+    return f"${p}"
+
 def aff(L):
     return f"https://systeme.io/{L['sio']}?sa={SA}" if L["sio"] else f"https://systeme.io/?sa={SA}"
 
@@ -119,7 +127,7 @@ def page(code, L):
         ("Unlimited", 97, [L["unl_line"]], False),
     ]
     plan_html = "".join(
-        f'<div class="plan{" hl" if hl else ""}"><h3>{E(nm)}</h3><div class="price">${p}<small>{E(L["month"])}</small></div>'
+        f'<div class="plan{" hl" if hl else ""}"><h3>{E(nm)}</h3><div class="price">{money(p, code)}<small>{E(L["month"])}</small></div>'
         f'<ul>{"".join(f"<li>{E(x)}</li>" for x in items)}</ul><a class="btn small" {link}>{E(L["cta"])}</a></div>'
         for nm, p, items, hl in plans)
     steps = "".join(f"<li>{E(s)}</li>" for s in L["s"])
